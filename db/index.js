@@ -1,6 +1,10 @@
-const { Client } = require("pg");
+const { Client } = require("pg"); // imports the pg module
 
 const client = new Client("postgres://localhost:5432/juicebox-dev");
+
+/**
+ * USER Methods
+ */
 
 async function createUser({ username, password, name, location }) {
   try {
@@ -23,10 +27,12 @@ async function createUser({ username, password, name, location }) {
 }
 
 async function updateUser(id, fields = {}) {
+  // build the set string
   const setString = Object.keys(fields)
     .map((key, index) => `"${key}"=$${index + 1}`)
     .join(", ");
 
+  // return early if this is called without fields
   if (setString.length === 0) {
     return;
   }
@@ -40,7 +46,6 @@ async function updateUser(id, fields = {}) {
       SET ${setString}
       WHERE id=${id}
       RETURNING *;
-    
     `,
       Object.values(fields)
     );
@@ -85,6 +90,10 @@ async function getUserById(userId) {
     throw error;
   }
 }
+
+/**
+ * POST Methods
+ */
 
 async function createPost({ authorId, title, content, tags = [] }) {
   try {
@@ -345,6 +354,25 @@ async function getAllTags() {
   }
 }
 
+async function getUserByUsername(username) {
+  try {
+    const {
+      rows: [user],
+    } = await client.query(
+      `
+      SELECT *
+      FROM users
+      WHERE username=$1;
+    `,
+      [username]
+    );
+
+    return user;
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   client,
   createUser,
@@ -360,4 +388,5 @@ module.exports = {
   getAllTags,
   createPostTag,
   addTagsToPost,
+  getUserByUsername,
 };
